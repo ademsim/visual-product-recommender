@@ -4,17 +4,32 @@ import pickle
 import numpy as np
 from PIL import Image
 from sklearn.neighbors import NearestNeighbors
+import gdown  # Google Drive'dan dosya indirmek için
 
 st.set_page_config(page_title="Görsel Öneri Sistemi", layout="wide")
-st.title("Görsel Tabanlı Benzer Ürün Öneri Sistemi")
+st.title("🔍 Görsel Tabanlı Benzer Ürün Öneri Sistemi")
+
+# Google Drive Bağlantısı
+FILENAMES_FILE_ID = "172UU0JLRZAucn94hCqg87IaJm48MF8Mk"
+FEATURES_FILE_ID = "1ERFHzUyt7jepHNQH9Dvpt5KRJJ8X0GUM"
 
 @st.cache_resource
 def load_data():
+    # Dosyalar yerelde yoksa Google Drive'dan indir
+    if not os.path.exists('filenames.pkl'):
+        url = f'https://drive.google.com/uc?id={FILENAMES_FILE_ID}'
+        gdown.download(url, 'filenames.pkl', quiet=False)
+        
+    if not os.path.exists('Images_features.pkl'):
+        url = f'https://drive.google.com/uc?id={FEATURES_FILE_ID}'
+        gdown.download(url, 'Images_features.pkl', quiet=False)
+
     filenames = pickle.load(open('filenames.pkl', 'rb'))
     features = pickle.load(open('Images_features.pkl', 'rb'))
     return filenames, features
 
-filenames, features = load_data()
+with st.spinner('Veriler ve model yükleniyor, lütfen bekleyin...'):
+    filenames, features = load_data()
 
 # NearestNeighbors modelini tanımla ve eğit
 neighbors = NearestNeighbors(n_neighbors=6, algorithm='brute', metric='euclidean')
@@ -39,7 +54,6 @@ if selected_image:
 
     with col2:
         st.subheader("Benzer Önerilen Ürünler")
-        # 5 adet benzer ürünü yan yana göster (ilk eleman kendisidir, o yüzden [1:] ile başlanır)
         cols = st.columns(5)
         for i, idx in enumerate(indices[0][1:]):
             recommended_file = filenames[idx]
