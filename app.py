@@ -45,7 +45,7 @@ if selected_image:
         if os.path.exists(fixed_path):
             st.image(fixed_path, use_container_width=True)
         else:
-            st.warning(f"Görsel sunucuda bulunamadı: {fixed_path}\n\n(Not: Görsellerin `images/` klasörüyle birlikte yüklenmesi gerekir.)")
+            st.warning(f"Görsel sunucuda bulunamadı: {fixed_path}\n\n(Not: Görsellerin `images/` klasörüyle birlikte repoda yer alması gerekir.)")
 
     selected_index = filenames.index(selected_image)
     distances, indices = neighbors.kneighbors([features[selected_index]])
