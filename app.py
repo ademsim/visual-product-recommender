@@ -5,12 +5,11 @@ import numpy as np
 from PIL import Image
 from sklearn.neighbors import NearestNeighbors
 import gdown
-import tensorflow as tf # ResNet50 için gerekli (özellik çıkarmak istiyorsanız)
 
 st.set_page_config(page_title="Görsel Öneri Sistemi", layout="wide")
 st.title("Görsel Tabanlı Benzer Ürün Öneri Sistemi")
 
-# Google Drive Dosya ID'leri 
+# Google Drive Dosya ID'leri
 FILENAMES_FILE_ID = "172UU0JLRZAucn94hCqg87IaJm48MF8Mk"
 FEATURES_FILE_ID = "1ERFHzUyt7jepHNQH9Dvpt5KRJJ8X0GUM"
 
@@ -34,27 +33,32 @@ with st.spinner('Model verileri yükleniyor, lütfen bekleyin...'):
 neighbors = NearestNeighbors(n_neighbors=6, algorithm='brute', metric='euclidean')
 neighbors.fit(features)
 
-# --- SEÇİM YÖNTEMİ: Dosya Yükletme ---
-st.subheader("Ürün Bul")
-uploaded_file = st.file_uploader("Lütfen aratmak istediğiniz ürün görselini yükleyin:", type=["jpg", "jpeg", "png"])
+selected_image = st.selectbox("Lütfen bir ürün görseli seçin:", filenames)
 
-if uploaded_file is not None:
-    # 1. Yüklenen görseli ekranda göster
+if selected_image:
+    fixed_path = selected_image.replace('\\', '/')
+    
     col1, col2 = st.columns([1, 2])
     
     with col1:
-        st.subheader("Yüklenen Görsel")
-        uploaded_image = Image.open(uploaded_file)
-        st.image(uploaded_image, use_container_width=True)
+        st.subheader("Seçilen Ürün")
+        if os.path.exists(fixed_path):
+            st.image(fixed_path, use_container_width=True)
+        else:
+            st.warning(f"Görsel sunucuda bulunamadı: {fixed_path}\n\n(Not: Görsellerin `images/` klasörüyle birlikte yüklenmesi gerekir.)")
 
-    # 2. Yüklenen görselin özelliklerini çıkarma (Modeliniz ve ön işleme adımlarınız burada olmalı)
-    # NOT: Eğer yüklenen görselin özelliklerini anlık çıkaracaksanız model.predict() kullanmalısınız.
-    # Örnek mantık:
-    # processed_img = preprocess(uploaded_image)
-    # query_feature = model.predict(processed_img)
-    
-    # DİKKAT: Eğer sisteminiz "dataset içindeki bir resmi seçme" mantığıyla çalışıyorsa, 
-    # yüklenen resmi doğrudan features matrisinde aratamayız. Bunun yerine model ile feature üretmelisiniz.
-    
-    # Alternatif olarak eğer hala selectbox kullanmak istiyorsanız ve sadece "görselleri sunucuda aramak" yerine 
-    # projenin yerelde çalışmasını istiyorsanız, images klasörünü proje dizinine (kodun yanına) atabilirsiniz.
+    selected_index = filenames.index(selected_image)
+    distances, indices = neighbors.kneighbors([features[selected_index]])
+
+    with col2:
+        st.subheader("Benzer Önerilen Ürünler")
+        cols = st.columns(5)
+        for i, idx in enumerate(indices[0][1:]):
+            recommended_file = filenames[idx]
+            fixed_rec_path = recommended_file.replace('\\', '/')
+            with cols[i]:
+                if os.path.exists(fixed_rec_path):
+                    st.image(fixed_rec_path, use_container_width=True)
+                    st.caption(f"Mesafe: {distances[0][i+1]:.2f}")
+                else:
+                    st.write("Görsel yok")
